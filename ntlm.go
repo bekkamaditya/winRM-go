@@ -24,7 +24,6 @@ func (c *ClientNTLM) Transport(endpoint *Endpoint) error {
 
 // Post make post to the winrm soap service (forwarded to clientRequest implementation)
 func (c *ClientNTLM) Post(client *Client, request *soap.SoapMessage) (string, error) {
-	fmt.Println("Entered function")
 	httpClient := &http.Client{Transport: c.transport}
     req, err := http.NewRequest("POST", client.url, strings.NewReader(request.String()))
     if err != nil {
@@ -35,7 +34,6 @@ func (c *ClientNTLM) Post(client *Client, request *soap.SoapMessage) (string, er
 
 	//NTLM authentication
 	err = c.cli.Authenticate()
-	fmt.Println(err)
 	if err!=nil {
 		return "",err
 	}
@@ -43,7 +41,6 @@ func (c *ClientNTLM) Post(client *Client, request *soap.SoapMessage) (string, er
     if err != nil {
         return "", fmt.Errorf("unknown error %s", err)
     }
-	fmt.Println("Done with authentication")
 	
     body, err := body(resp)
     if err != nil {
@@ -60,5 +57,4 @@ func (c *ClientNTLM) Post(client *Client, request *soap.SoapMessage) (string, er
     }()
 	
     return body, err
-	//return c.clientRequest.Post(client, request)
 }
