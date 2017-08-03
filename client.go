@@ -8,12 +8,14 @@ import (
 	"sync"
 
 	"github.com/masterzen/winrm/soap"
+	"winrm/ntlm"
 )
 
 // Client struct
 type Client struct {
 	Parameters
 	username string
+	domain   string
 	password string
 	useHTTPS bool
 	url      string
@@ -31,17 +33,18 @@ type Transporter interface {
 // NewClient will create a new remote client on url, connecting with user and password
 // This function doesn't connect (connection happens only when CreateShell is called)
 func NewClient(endpoint *Endpoint, user, password string) (*Client, error) {
-	return NewClientWithParameters(endpoint, user, password, DefaultParameters)
+	return NewClientWithParameters(endpoint, user, "", password, DefaultParameters)
 }
 
 // NewClientWithParameters will create a new remote client on url, connecting with user and password
 // This function doesn't connect (connection happens only when CreateShell is called)
-func NewClientWithParameters(endpoint *Endpoint, user, password string, params *Parameters) (*Client, error) {
+func NewClientWithParameters(endpoint *Endpoint, user, domain, password string, params *Parameters) (*Client, error) {
 
 	// alloc a new client
 	client := &Client{
 		Parameters: *params,
 		username:   user,
+		domain:     domain,
 		password:   password,
 		url:        endpoint.url(),
 		useHTTPS:   endpoint.HTTPS,
@@ -51,7 +54,11 @@ func NewClientWithParameters(endpoint *Endpoint, user, password string, params *
 
 	// switch to other transport if provided
 	if params.TransportDecorator != nil {
-		client.http = params.TransportDecorator()
+		//client.http = params.TransportDecorator()
+		ntlmClient := ntlm.NewClient(user,domain,password,endpoint.Host,uint16(endpoint.Port))
+		client.http = &ClientNTLM{
+			cli : ntlmClient,
+		}
 	}
 
 	// set the transport to some endpoint configuration
